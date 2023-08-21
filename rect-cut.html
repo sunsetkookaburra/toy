@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cutting Up a Rectangle</title>
+  <!--
+    rect-cut - rectangle cut visualiser
+    Copyright (C) 2023  Oliver Lenehan
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  -->
+</head>
+<body>
+<header>
+  <h1>Cutting Up a Rectangle</h1>
+</header>
+<main>
+  <form id="demo">
+    <fieldset>
+      <legend>Demo</legend>
+      <label for="pieces">
+        Pieces:
+        <input name="pieces" type="number" value="2" min="2"/>
+      </label>
+      <hr/>
+      <output for="pieces">
+        <canvas id="cnv" width="600" height="400"></canvas>
+      </output>
+    </fieldset>
+  </form>
+</main>
+<hr/>
+<footer>
+  2023 Oliver Lenehan - <a href="./COPYING">GPLv3</a>
+</footer>
+<script>
+  function splitTriangle([pAx, pAy, pBx, pBy, pCx, pCy]) {
+    const a = Math.sqrt((pBx - pCx)**2 + (pBy - pCy)**2);
+    const b = Math.sqrt((pAx - pCx)**2 + (pAy - pCy)**2);
+    const c = Math.sqrt(a**2 + b**2);
+    const dBAx = pBx - pAx;
+    const dBAy = pBy - pAy;
+    // https://www.maa.org/book/export/html/705186
+    const r = (b**2) / (c**2);
+    const pLx = pAx + r * dBAx;
+    const pLy = pAy + r * dBAy;
+    return [
+      [pAx, pAy, pCx, pCy, pLx, pLy],
+      [pCx, pCy, pBx, pBy, pLx, pLy],
+    ];
+  }
+
+  const ctx = cnv.getContext("2d");
+  const width = cnv.width;
+  const height = cnv.height;
+  const stroke = 4;
+  cnv.width += stroke * 4;
+  cnv.height += stroke * 4;
+  ctx.translate(stroke * 2, stroke * 2);
+
+  demo.oninput = () => {
+    const pieces = Number(demo.pieces.value);
+    const drawn = [[0, 0, width, height, 0, height], [0, 0, width, height, width, 0]];
+
+    window.requestAnimationFrame(() => {
+      console.log("a");
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.beginPath();
+      ctx.fillStyle = "none";
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = stroke;
+
+      ctx.moveTo(0, 0);
+      ctx.lineTo(width, 0);
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+
+      ctx.moveTo(0, 0);
+      ctx.lineTo(width, height);
+
+      for (let i = 2; i < pieces; ++i) {
+        const tris = splitTriangle(drawn.shift());
+        ctx.moveTo(tris[1][0], tris[1][1]); // Move to point C on original
+        ctx.lineTo(tris[1][4], tris[1][5]); // Line to new common base point, L
+        drawn.push(...tris);
+      }
+
+      ctx.stroke();
+    });
+  };
+  demo.oninput();
+</script>
+</body>
+</html>
